@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gym.club.mapper.MemberCardMapper">
+    
+    <resultMap id="memberCardMap" type="com.gym.club.entity.MemberCard">
+        <id property="id" column="id"/>
+        <result property="memberId" column="member_id"/>
+        <result property="cardTypeId" column="card_type_id"/>
+        <result property="cardNumber" column="card_number"/>
+        <result property="startDate" column="start_date"/>
+        <result property="endDate" column="end_date"/>
+        <result property="remainingDays" column="remaining_days"/>
+        <result property="totalAmount" column="total_amount"/>
+        <result property="paidAmount" column="paid_amount"/>
+        <result property="paymentStatus" column="payment_status"/>
+        <result property="cardStatus" column="card_status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <!-- 关联会员信息 -->
+        <association property="member" javaType="com.gym.club.entity.Member">
+            <id property="id" column="member_id"/>
+            <result property="username" column="m_username"/>
+            <result property="realName" column="m_real_name"/>
+            <result property="phone" column="m_phone"/>
+        </association>
+        <!-- 关联卡类型信息 -->
+        <association property="cardType" javaType="com.gym.club.entity.CardType">
+            <id property="id" column="card_type_id"/>
+            <result property="name" column="ct_name"/>
+            <result property="durationDays" column="ct_duration_days"/>
+            <result property="price" column="ct_price"/>
+        </association>
+    </resultMap>
+    
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO member_card (member_id, card_type_id, card_number, start_date, end_date, 
+                                remaining_days, total_amount, paid_amount, payment_status, card_status)
+        VALUES (#{memberId}, #{cardTypeId}, #{cardNumber}, #{startDate}, #{endDate}, 
+                #{remainingDays}, #{totalAmount}, #{paidAmount}, #{paymentStatus}, #{cardStatus})
+    </insert>
+
+    <select id="selectById" resultMap="memberCardMap">
+        SELECT mc.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone,
+               ct.name as ct_name, ct.duration_days as ct_duration_days, ct.price as ct_price
+        FROM member_card mc
+        LEFT JOIN member m ON mc.member_id = m.id
+        LEFT JOIN card_type ct ON mc.card_type_id = ct.id
+        WHERE mc.id = #{id}
+    </select>
+
+    <select id="selectByCardNumber" resultMap="memberCardMap">
+        SELECT mc.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone,
+               ct.name as ct_name, ct.duration_days as ct_duration_days, ct.price as ct_price
+        FROM member_card mc
+        LEFT JOIN member m ON mc.member_id = m.id
+        LEFT JOIN card_type ct ON mc.card_type_id = ct.id
+        WHERE mc.card_number = #{cardNumber}
+    </select>
+
+    <select id="selectByMemberId" resultMap="memberCardMap">
+        SELECT mc.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone,
+               ct.name as ct_name, ct.duration_days as ct_duration_days, ct.price as ct_price
+        FROM member_card mc
+        LEFT JOIN member m ON mc.member_id = m.id
+        LEFT JOIN card_type ct ON mc.card_type_id = ct.id
+        WHERE mc.member_id = #{memberId}
+        ORDER BY mc.create_time DESC
+    </select>
+
+    <select id="selectAll" resultMap="memberCardMap">
+        SELECT mc.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone,
+               ct.name as ct_name, ct.duration_days as ct_duration_days, ct.price as ct_price
+        FROM member_card mc
+        LEFT JOIN member m ON mc.member_id = m.id
+        LEFT JOIN card_type ct ON mc.card_type_id = ct.id
+        ORDER BY mc.create_time DESC
+    </select>
+
+    <select id="selectValidCardByMemberId" resultMap="memberCardMap">
+        SELECT mc.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone,
+               ct.name as ct_name, ct.duration_days as ct_duration_days, ct.price as ct_price
+        FROM member_card mc
+        LEFT JOIN member m ON mc.member_id = m.id
+        LEFT JOIN card_type ct ON mc.card_type_id = ct.id
+        WHERE mc.member_id = #{memberId}
+          AND mc.card_status = 1  -- 有效卡
+          AND mc.payment_status = 1  -- 已支付
+          AND mc.end_date >= CURDATE()  -- 未过期
+        ORDER BY mc.end_date DESC
+        LIMIT 1
+    </select>
+
+    <update id="update">
+        UPDATE member_card
+        <set>
+            <if test="memberId != null">member_id = #{memberId},</if>
+            <if test="cardTypeId != null">card_type_id = #{cardTypeId},</if>
+            <if test="cardNumber != null">card_number = #{cardNumber},</if>
+            <if test="startDate != null">start_date = #{startDate},</if>
+            <if test="endDate != null">end_date = #{endDate},</if>
+            <if test="remainingDays != null">remaining_days = #{remainingDays},</if>
+            <if test="totalAmount != null">total_amount = #{totalAmount},</if>
+            <if test="paidAmount != null">paid_amount = #{paidAmount},</if>
+            <if test="paymentStatus != null">payment_status = #{paymentStatus},</if>
+            <if test="cardStatus != null">card_status = #{cardStatus},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updatePaymentStatus">
+        UPDATE member_card SET payment_status = #{paymentStatus} WHERE id = #{id}
+    </update>
+
+    <update id="updateCardStatus">
+        UPDATE member_card SET card_status = #{cardStatus} WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM member_card WHERE id = #{id}
+    </delete>
+</mapper>

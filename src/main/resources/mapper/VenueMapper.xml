@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gym.club.mapper.VenueMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO venue (name, type, area, capacity, equipment_ids, status, description)
+        VALUES (#{name}, #{type}, #{area}, #{capacity}, #{equipmentIds}, #{status}, #{description})
+    </insert>
+
+    <select id="selectById" resultType="com.gym.club.entity.Venue">
+        SELECT * FROM venue WHERE id = #{id}
+    </select>
+
+    <select id="selectByName" resultType="com.gym.club.entity.Venue">
+        SELECT * FROM venue WHERE name = #{name}
+    </select>
+
+    <select id="selectAll" resultType="com.gym.club.entity.Venue">
+        SELECT * FROM venue ORDER BY type, name
+    </select>
+
+    <select id="selectByType" resultType="com.gym.club.entity.Venue">
+        SELECT * FROM venue WHERE type = #{type} ORDER BY name
+    </select>
+
+    <select id="selectByStatus" resultType="com.gym.club.entity.Venue">
+        SELECT * FROM venue WHERE status = #{status} ORDER BY name
+    </select>
+
+    <update id="update">
+        UPDATE venue
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="area != null">area = #{area},</if>
+            <if test="capacity != null">capacity = #{capacity},</if>
+            <if test="equipmentIds != null">equipment_ids = #{equipmentIds},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="description != null">description = #{description},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM venue WHERE id = #{id}
+    </delete>
+</mapper>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gym.club.mapper.AttendanceMapper">
+    
+    <resultMap id="attendanceMap" type="com.gym.club.entity.Attendance">
+        <id property="id" column="id"/>
+        <result property="memberId" column="member_id"/>
+        <result property="bookingId" column="booking_id"/>
+        <result property="checkInTime" column="check_in_time"/>
+        <result property="checkOutTime" column="check_out_time"/>
+        <result property="durationMinutes" column="duration_minutes"/>
+        <result property="caloriesBurned" column="calories_burned"/>
+        <result property="attendanceType" column="attendance_type"/>
+        <result property="notes" column="notes"/>
+        <result property="createTime" column="create_time"/>
+        <!-- 关联会员信息 -->
+        <association property="member" javaType="com.gym.club.entity.Member">
+            <id property="id" column="member_id"/>
+            <result property="username" column="m_username"/>
+            <result property="realName" column="m_real_name"/>
+        </association>
+        <!-- 关联预约信息 -->
+        <association property="booking" javaType="com.gym.club.entity.Booking">
+            <id property="id" column="booking_id"/>
+            <result property="bookingNumber" column="b_booking_number"/>
+        </association>
+    </resultMap>
+    
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO attendance (member_id, booking_id, check_in_time, check_out_time, 
+                               duration_minutes, calories_burned, attendance_type, notes)
+        VALUES (#{memberId}, #{bookingId}, #{checkInTime}, #{checkOutTime}, 
+                #{durationMinutes}, #{caloriesBurned}, #{attendanceType}, #{notes})
+    </insert>
+
+    <select id="selectById" resultMap="attendanceMap">
+        SELECT a.*, 
+               m.username as m_username, m.real_name as m_real_name,
+               b.booking_number as b_booking_number
+        FROM attendance a
+        LEFT JOIN member m ON a.member_id = m.id
+        LEFT JOIN booking b ON a.booking_id = b.id
+        WHERE a.id = #{id}
+    </select>
+
+    <select id="selectByMemberId" resultMap="attendanceMap">
+        SELECT a.*, 
+               m.username as m_username, m.real_name as m_real_name,
+               b.booking_number as b_booking_number
+        FROM attendance a
+        LEFT JOIN member m ON a.member_id = m.id
+        LEFT JOIN booking b ON a.booking_id = b.id
+        WHERE a.member_id = #{memberId}
+        ORDER BY a.check_in_time DESC
+    </select>
+
+    <select id="selectByDateRange" resultMap="attendanceMap">
+        SELECT a.*, 
+               m.username as m_username, m.real_name as m_real_name,
+               b.booking_number as b_booking_number
+        FROM attendance a
+        LEFT JOIN member m ON a.member_id = m.id
+        LEFT JOIN booking b ON a.booking_id = b.id
+        WHERE a.check_in_time BETWEEN #{startDate} AND #{endDate}
+        ORDER BY a.check_in_time DESC
+    </select>
+
+    <select id="selectByMemberAndDateRange" resultMap="attendanceMap">
+        SELECT a.*, 
+               m.username as m_username, m.real_name as m_real_name,
+               b.booking_number as b_booking_number
+        FROM attendance a
+        LEFT JOIN member m ON a.member_id = m.id
+        LEFT JOIN booking b ON a.booking_id = b.id
+        WHERE a.member_id = #{memberId}
+          AND a.check_in_time BETWEEN #{startDate} AND #{endDate}
+        ORDER BY a.check_in_time DESC
+    </select>
+
+    <select id="countByMemberId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM attendance WHERE member_id = #{memberId}
+    </select>
+
+    <select id="sumDurationByMemberId" resultType="java.lang.Integer">
+        SELECT SUM(duration_minutes) FROM attendance 
+        WHERE member_id = #{memberId} AND duration_minutes IS NOT NULL
+    </select>
+
+    <select id="countByDateRange" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM attendance 
+        WHERE check_in_time BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <update id="updateCheckOutTime">
+        UPDATE attendance 
+        SET check_out_time = #{checkOutTime},
+            duration_minutes = #{durationMinutes}
+        WHERE id = #{id}
+    </update>
+</mapper>

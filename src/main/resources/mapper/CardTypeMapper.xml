@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gym.club.mapper.CardTypeMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO card_type (name, duration_days, price, description, status)
+        VALUES (#{name}, #{durationDays}, #{price}, #{description}, #{status})
+    </insert>
+
+    <select id="selectById" resultType="com.gym.club.entity.CardType">
+        SELECT * FROM card_type WHERE id = #{id}
+    </select>
+
+    <select id="selectAll" resultType="com.gym.club.entity.CardType">
+        SELECT * FROM card_type ORDER BY price ASC
+    </select>
+
+    <select id="selectByStatus" resultType="com.gym.club.entity.CardType">
+        SELECT * FROM card_type WHERE status = #{status} ORDER BY price ASC
+    </select>
+
+    <update id="update">
+        UPDATE card_type
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="durationDays != null">duration_days = #{durationDays},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM card_type WHERE id = #{id}
+    </delete>
+</mapper>

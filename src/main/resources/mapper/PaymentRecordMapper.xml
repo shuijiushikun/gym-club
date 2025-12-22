@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gym.club.mapper.PaymentRecordMapper">
+    
+    <resultMap id="paymentRecordMap" type="com.gym.club.entity.PaymentRecord">
+        <id property="id" column="id"/>
+        <result property="memberId" column="member_id"/>
+        <result property="orderNumber" column="order_number"/>
+        <result property="paymentType" column="payment_type"/>
+        <result property="relatedId" column="related_id"/>
+        <result property="amount" column="amount"/>
+        <result property="paymentMethod" column="payment_method"/>
+        <result property="paymentStatus" column="payment_status"/>
+        <result property="transactionId" column="transaction_id"/>
+        <result property="payTime" column="pay_time"/>
+        <result property="remark" column="remark"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <!-- 关联会员信息 -->
+        <association property="member" javaType="com.gym.club.entity.Member">
+            <id property="id" column="member_id"/>
+            <result property="username" column="m_username"/>
+            <result property="realName" column="m_real_name"/>
+            <result property="phone" column="m_phone"/>
+        </association>
+    </resultMap>
+    
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO payment_record (member_id, order_number, payment_type, related_id, amount, 
+                                   payment_method, payment_status, transaction_id, pay_time, remark)
+        VALUES (#{memberId}, #{orderNumber}, #{paymentType}, #{relatedId}, #{amount}, 
+                #{paymentMethod}, #{paymentStatus}, #{transactionId}, #{payTime}, #{remark})
+    </insert>
+
+    <select id="selectById" resultMap="paymentRecordMap">
+        SELECT pr.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone
+        FROM payment_record pr
+        LEFT JOIN member m ON pr.member_id = m.id
+        WHERE pr.id = #{id}
+    </select>
+
+    <select id="selectByOrderNumber" resultMap="paymentRecordMap">
+        SELECT pr.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone
+        FROM payment_record pr
+        LEFT JOIN member m ON pr.member_id = m.id
+        WHERE pr.order_number = #{orderNumber}
+    </select>
+
+    <select id="selectByMemberId" resultMap="paymentRecordMap">
+        SELECT pr.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone
+        FROM payment_record pr
+        LEFT JOIN member m ON pr.member_id = m.id
+        WHERE pr.member_id = #{memberId}
+        ORDER BY pr.create_time DESC
+    </select>
+
+    <select id="selectAll" resultMap="paymentRecordMap">
+        SELECT pr.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone
+        FROM payment_record pr
+        LEFT JOIN member m ON pr.member_id = m.id
+        ORDER BY pr.create_time DESC
+    </select>
+
+    <select id="sumAmountByMemberId" resultType="java.math.BigDecimal">
+        SELECT SUM(amount) FROM payment_record 
+        WHERE member_id = #{memberId} AND payment_status = 1
+    </select>
+
+    <select id="sumAmountByDateRange" resultType="java.math.BigDecimal">
+        SELECT SUM(amount) FROM payment_record 
+        WHERE payment_status = 1
+          AND create_time BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <update id="update">
+        UPDATE payment_record
+        <set>
+            <if test="memberId != null">member_id = #{memberId},</if>
+            <if test="orderNumber != null">order_number = #{orderNumber},</if>
+            <if test="paymentType != null">payment_type = #{paymentType},</if>
+            <if test="relatedId != null">related_id = #{relatedId},</if>
+            <if test="amount != null">amount = #{amount},</if>
+            <if test="paymentMethod != null">payment_method = #{paymentMethod},</if>
+            <if test="paymentStatus != null">payment_status = #{paymentStatus},</if>
+            <if test="transactionId != null">transaction_id = #{transactionId},</if>
+            <if test="payTime != null">pay_time = #{payTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updatePaymentStatus">
+        UPDATE payment_record 
+        SET payment_status = #{paymentStatus},
+            transaction_id = #{transactionId},
+            pay_time = NOW()
+        WHERE order_number = #{orderNumber}
+    </update>
+</mapper>

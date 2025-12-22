@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gym.club.mapper.EquipmentMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO equipment (name, type, brand, model, serial_number, purchase_date, purchase_price, 
+                              usage_hours, maintenance_interval, last_maintenance_date, next_maintenance_date, 
+                              status, location, notes)
+        VALUES (#{name}, #{type}, #{brand}, #{model}, #{serialNumber}, #{purchaseDate}, #{purchasePrice},
+                #{usageHours}, #{maintenanceInterval}, #{lastMaintenanceDate}, #{nextMaintenanceDate},
+                #{status}, #{location}, #{notes})
+    </insert>
+
+    <select id="selectById" resultType="com.gym.club.entity.Equipment">
+        SELECT * FROM equipment WHERE id = #{id}
+    </select>
+
+    <select id="selectBySerialNumber" resultType="com.gym.club.entity.Equipment">
+        SELECT * FROM equipment WHERE serial_number = #{serialNumber}
+    </select>
+
+    <select id="selectAll" resultType="com.gym.club.entity.Equipment">
+        SELECT * FROM equipment ORDER BY status, name
+    </select>
+
+    <select id="selectByType" resultType="com.gym.club.entity.Equipment">
+        SELECT * FROM equipment WHERE type = #{type} ORDER BY name
+    </select>
+
+    <select id="selectByStatus" resultType="com.gym.club.entity.Equipment">
+        SELECT * FROM equipment WHERE status = #{status} ORDER BY name
+    </select>
+
+    <update id="update">
+        UPDATE equipment
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="brand != null">brand = #{brand},</if>
+            <if test="model != null">model = #{model},</if>
+            <if test="serialNumber != null">serial_number = #{serialNumber},</if>
+            <if test="purchaseDate != null">purchase_date = #{purchaseDate},</if>
+            <if test="purchasePrice != null">purchase_price = #{purchasePrice},</if>
+            <if test="usageHours != null">usage_hours = #{usageHours},</if>
+            <if test="maintenanceInterval != null">maintenance_interval = #{maintenanceInterval},</if>
+            <if test="lastMaintenanceDate != null">last_maintenance_date = #{lastMaintenanceDate},</if>
+            <if test="nextMaintenanceDate != null">next_maintenance_date = #{nextMaintenanceDate},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="location != null">location = #{location},</if>
+            <if test="notes != null">notes = #{notes},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateUsageHours">
+        UPDATE equipment SET usage_hours = usage_hours + #{hours} WHERE id = #{id}
+    </update>
+
+    <update id="updateMaintenanceDate">
+        UPDATE equipment 
+        SET last_maintenance_date = #{lastDate}, 
+            next_maintenance_date = #{nextDate}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM equipment WHERE id = #{id}
+    </delete>
+</mapper>

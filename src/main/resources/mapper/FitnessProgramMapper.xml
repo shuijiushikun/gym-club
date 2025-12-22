@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gym.club.mapper.FitnessProgramMapper">
+    
+    <resultMap id="fitnessProgramMap" type="com.gym.club.entity.FitnessProgram">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="type" column="type"/>
+        <result property="coachId" column="coach_id"/>
+        <result property="description" column="description"/>
+        <result property="durationMinutes" column="duration_minutes"/>
+        <result property="maxParticipants" column="max_participants"/>
+        <result property="price" column="price"/>
+        <result property="difficultyLevel" column="difficulty_level"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <!-- 关联教练信息 -->
+        <association property="coach" javaType="com.gym.club.entity.Coach">
+            <id property="id" column="coach_id"/>
+            <result property="realName" column="c_real_name"/>
+            <result property="specialty" column="c_specialty"/>
+        </association>
+    </resultMap>
+    
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO fitness_program (name, type, coach_id, description, duration_minutes, 
+                                    max_participants, price, difficulty_level, status)
+        VALUES (#{name}, #{type}, #{coachId}, #{description}, #{durationMinutes}, 
+                #{maxParticipants}, #{price}, #{difficultyLevel}, #{status})
+    </insert>
+
+    <select id="selectById" resultMap="fitnessProgramMap">
+        SELECT fp.*, 
+               c.real_name as c_real_name, c.specialty as c_specialty
+        FROM fitness_program fp
+        LEFT JOIN coach c ON fp.coach_id = c.id
+        WHERE fp.id = #{id}
+    </select>
+
+    <select id="selectAll" resultMap="fitnessProgramMap">
+        SELECT fp.*, 
+               c.real_name as c_real_name, c.specialty as c_specialty
+        FROM fitness_program fp
+        LEFT JOIN coach c ON fp.coach_id = c.id
+        ORDER BY fp.create_time DESC
+    </select>
+
+    <select id="selectByType" resultMap="fitnessProgramMap">
+        SELECT fp.*, 
+               c.real_name as c_real_name, c.specialty as c_specialty
+        FROM fitness_program fp
+        LEFT JOIN coach c ON fp.coach_id = c.id
+        WHERE fp.type = #{type}
+        ORDER BY fp.create_time DESC
+    </select>
+
+    <select id="selectByCoachId" resultMap="fitnessProgramMap">
+        SELECT fp.*, 
+               c.real_name as c_real_name, c.specialty as c_specialty
+        FROM fitness_program fp
+        LEFT JOIN coach c ON fp.coach_id = c.id
+        WHERE fp.coach_id = #{coachId}
+        ORDER BY fp.create_time DESC
+    </select>
+
+    <select id="selectByStatus" resultMap="fitnessProgramMap">
+        SELECT fp.*, 
+               c.real_name as c_real_name, c.specialty as c_specialty
+        FROM fitness_program fp
+        LEFT JOIN coach c ON fp.coach_id = c.id
+        WHERE fp.status = #{status}
+        ORDER BY fp.create_time DESC
+    </select>
+
+    <update id="update">
+        UPDATE fitness_program
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="coachId != null">coach_id = #{coachId},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="durationMinutes != null">duration_minutes = #{durationMinutes},</if>
+            <if test="maxParticipants != null">max_participants = #{maxParticipants},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="difficultyLevel != null">difficulty_level = #{difficultyLevel},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM fitness_program WHERE id = #{id}
+    </delete>
+</mapper>

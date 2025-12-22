@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gym.club.mapper.MemberMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO member (username, password, real_name, phone, email, gender, birthday, avatar_url, status)
+        VALUES (#{username}, #{password}, #{realName}, #{phone}, #{email}, #{gender}, #{birthday}, #{avatarUrl}, #{status})
+    </insert>
+
+    <select id="selectById" resultType="com.gym.club.entity.Member">
+        SELECT * FROM member WHERE id = #{id}
+    </select>
+
+    <select id="selectByUsername" resultType="com.gym.club.entity.Member">
+        SELECT * FROM member WHERE username = #{username}
+    </select>
+
+    <select id="selectAll" resultType="com.gym.club.entity.Member">
+        SELECT * FROM member ORDER BY id DESC
+    </select>
+
+    <update id="update">
+        UPDATE member
+        <set>
+            <if test="username != null">username = #{username},</if>
+            <if test="password != null">password = #{password},</if>
+            <if test="realName != null">real_name = #{realName},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="birthday != null">birthday = #{birthday},</if>
+            <if test="avatarUrl != null">avatar_url = #{avatarUrl},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM member WHERE id = #{id}
+    </delete>
+</mapper>

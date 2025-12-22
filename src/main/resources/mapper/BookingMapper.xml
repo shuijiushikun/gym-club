@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gym.club.mapper.BookingMapper">
+    
+    <resultMap id="bookingMap" type="com.gym.club.entity.Booking">
+        <id property="id" column="id"/>
+        <result property="bookingNumber" column="booking_number"/>
+        <result property="memberId" column="member_id"/>
+        <result property="bookingType" column="booking_type"/>
+        <result property="relatedId" column="related_id"/>
+        <result property="coachId" column="coach_id"/>
+        <result property="venueId" column="venue_id"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="durationMinutes" column="duration_minutes"/>
+        <result property="participantsCount" column="participants_count"/>
+        <result property="bookingStatus" column="booking_status"/>
+        <result property="attendanceStatus" column="attendance_status"/>
+        <result property="notes" column="notes"/>
+        <result property="cancelReason" column="cancel_reason"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <!-- 关联会员信息 -->
+        <association property="member" javaType="com.gym.club.entity.Member">
+            <id property="id" column="member_id"/>
+            <result property="username" column="m_username"/>
+            <result property="realName" column="m_real_name"/>
+            <result property="phone" column="m_phone"/>
+        </association>
+        <!-- 关联教练信息 -->
+        <association property="coach" javaType="com.gym.club.entity.Coach">
+            <id property="id" column="coach_id"/>
+            <result property="realName" column="c_real_name"/>
+            <result property="phone" column="c_phone"/>
+        </association>
+        <!-- 关联场地信息 -->
+        <association property="venue" javaType="com.gym.club.entity.Venue">
+            <id property="id" column="venue_id"/>
+            <result property="name" column="v_name"/>
+        </association>
+        <!-- 关联健身项目信息 -->
+        <association property="fitnessProgram" javaType="com.gym.club.entity.FitnessProgram">
+            <id property="id" column="related_id"/>
+            <result property="name" column="fp_name"/>
+        </association>
+    </resultMap>
+    
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO booking (booking_number, member_id, booking_type, related_id, coach_id, venue_id, 
+                            start_time, end_time, duration_minutes, participants_count, booking_status, 
+                            attendance_status, notes, cancel_reason)
+        VALUES (#{bookingNumber}, #{memberId}, #{bookingType}, #{relatedId}, #{coachId}, #{venueId},
+                #{startTime}, #{endTime}, #{durationMinutes}, #{participantsCount}, #{bookingStatus},
+                #{attendanceStatus}, #{notes}, #{cancelReason})
+    </insert>
+
+    <select id="selectById" resultMap="bookingMap">
+        SELECT b.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone,
+               c.real_name as c_real_name, c.phone as c_phone,
+               v.name as v_name,
+               fp.name as fp_name
+        FROM booking b
+        LEFT JOIN member m ON b.member_id = m.id
+        LEFT JOIN coach c ON b.coach_id = c.id
+        LEFT JOIN venue v ON b.venue_id = v.id
+        LEFT JOIN fitness_program fp ON b.related_id = fp.id AND b.booking_type IN (1,2)
+        WHERE b.id = #{id}
+    </select>
+
+    <select id="selectByBookingNumber" resultMap="bookingMap">
+        SELECT b.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone,
+               c.real_name as c_real_name, c.phone as c_phone,
+               v.name as v_name,
+               fp.name as fp_name
+        FROM booking b
+        LEFT JOIN member m ON b.member_id = m.id
+        LEFT JOIN coach c ON b.coach_id = c.id
+        LEFT JOIN venue v ON b.venue_id = v.id
+        LEFT JOIN fitness_program fp ON b.related_id = fp.id AND b.booking_type IN (1,2)
+        WHERE b.booking_number = #{bookingNumber}
+    </select>
+
+    <select id="selectByMemberId" resultMap="bookingMap">
+        SELECT b.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone,
+               c.real_name as c_real_name, c.phone as c_phone,
+               v.name as v_name,
+               fp.name as fp_name
+        FROM booking b
+        LEFT JOIN member m ON b.member_id = m.id
+        LEFT JOIN coach c ON b.coach_id = c.id
+        LEFT JOIN venue v ON b.venue_id = v.id
+        LEFT JOIN fitness_program fp ON b.related_id = fp.id AND b.booking_type IN (1,2)
+        WHERE b.member_id = #{memberId}
+        ORDER BY b.start_time DESC
+    </select>
+
+    <select id="selectByCoachId" resultMap="bookingMap">
+        SELECT b.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone,
+               c.real_name as c_real_name, c.phone as c_phone,
+               v.name as v_name,
+               fp.name as fp_name
+        FROM booking b
+        LEFT JOIN member m ON b.member_id = m.id
+        LEFT JOIN coach c ON b.coach_id = c.id
+        LEFT JOIN venue v ON b.venue_id = v.id
+        LEFT JOIN fitness_program fp ON b.related_id = fp.id AND b.booking_type IN (1,2)
+        WHERE b.coach_id = #{coachId}
+        ORDER BY b.start_time DESC
+    </select>
+
+    <select id="selectByVenueId" resultMap="bookingMap">
+        SELECT b.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone,
+               c.real_name as c_real_name, c.phone as c_phone,
+               v.name as v_name,
+               fp.name as fp_name
+        FROM booking b
+        LEFT JOIN member m ON b.member_id = m.id
+        LEFT JOIN coach c ON b.coach_id = c.id
+        LEFT JOIN venue v ON b.venue_id = v.id
+        LEFT JOIN fitness_program fp ON b.related_id = fp.id AND b.booking_type IN (1,2)
+        WHERE b.venue_id = #{venueId}
+        ORDER BY b.start_time DESC
+    </select>
+
+    <select id="selectAll" resultMap="bookingMap">
+        SELECT b.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone,
+               c.real_name as c_real_name, c.phone as c_phone,
+               v.name as v_name,
+               fp.name as fp_name
+        FROM booking b
+        LEFT JOIN member m ON b.member_id = m.id
+        LEFT JOIN coach c ON b.coach_id = c.id
+        LEFT JOIN venue v ON b.venue_id = v.id
+        LEFT JOIN fitness_program fp ON b.related_id = fp.id AND b.booking_type IN (1,2)
+        ORDER BY b.start_time DESC
+    </select>
+
+    <!-- 冲突检测查询：查询指定时间段内场地或教练是否有预约 -->
+    <select id="selectConflictingBookings" resultMap="bookingMap">
+        SELECT b.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone,
+               c.real_name as c_real_name, c.phone as c_phone,
+               v.name as v_name,
+               fp.name as fp_name
+        FROM booking b
+        LEFT JOIN member m ON b.member_id = m.id
+        LEFT JOIN coach c ON b.coach_id = c.id
+        LEFT JOIN venue v ON b.venue_id = v.id
+        LEFT JOIN fitness_program fp ON b.related_id = fp.id AND b.booking_type IN (1,2)
+        WHERE b.booking_status IN (0, 1)  -- 只检查待确认和已确认的预约
+          AND (
+            (b.venue_id = #{venueId} AND b.venue_id IS NOT NULL) OR
+            (b.coach_id = #{coachId} AND b.coach_id IS NOT NULL)
+          )
+          AND (
+            (b.start_time &lt; #{endTime} AND b.end_time &gt; #{startTime})
+          )
+        <if test="excludeBookingId != null">
+          AND b.id != #{excludeBookingId}
+        </if>
+    </select>
+
+    <select id="selectByBookingStatus" resultMap="bookingMap">
+        SELECT b.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone,
+               c.real_name as c_real_name, c.phone as c_phone,
+               v.name as v_name,
+               fp.name as fp_name
+        FROM booking b
+        LEFT JOIN member m ON b.member_id = m.id
+        LEFT JOIN coach c ON b.coach_id = c.id
+        LEFT JOIN venue v ON b.venue_id = v.id
+        LEFT JOIN fitness_program fp ON b.related_id = fp.id AND b.booking_type IN (1,2)
+        WHERE b.booking_status = #{bookingStatus}
+        ORDER BY b.start_time DESC
+    </select>
+
+    <update id="updateBookingStatus">
+        UPDATE booking 
+        SET booking_status = #{bookingStatus},
+            cancel_reason = #{cancelReason}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateAttendanceStatus">
+        UPDATE booking SET attendance_status = #{attendanceStatus} WHERE id = #{id}
+    </update>
+
+    <update id="update">
+        UPDATE booking
+        <set>
+            <if test="bookingNumber != null">booking_number = #{bookingNumber},</if>
+            <if test="memberId != null">member_id = #{memberId},</if>
+            <if test="bookingType != null">booking_type = #{bookingType},</if>
+            <if test="relatedId != null">related_id = #{relatedId},</if>
+            <if test="coachId != null">coach_id = #{coachId},</if>
+            <if test="venueId != null">venue_id = #{venueId},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="durationMinutes != null">duration_minutes = #{durationMinutes},</if>
+            <if test="participantsCount != null">participants_count = #{participantsCount},</if>
+            <if test="bookingStatus != null">booking_status = #{bookingStatus},</if>
+            <if test="attendanceStatus != null">attendance_status = #{attendanceStatus},</if>
+            <if test="notes != null">notes = #{notes},</if>
+            <if test="cancelReason != null">cancel_reason = #{cancelReason},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM booking WHERE id = #{id}
+    </delete>
+</mapper>
