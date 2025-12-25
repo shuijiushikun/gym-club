@@ -24,6 +24,9 @@ public class BookingService {
     @Autowired
     private FitnessProgramMapper fitnessProgramMapper;
 
+    @Autowired
+    private PaymentService paymentService; // Inject PaymentService
+
     // 生成预约单号
     private String generateBookingNumber() {
         return "BK" + System.currentTimeMillis() + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
@@ -104,8 +107,33 @@ public class BookingService {
         }
 
         bookingMapper.insert(booking);
-        return bookingMapper.selectById(booking.getId());
+        Booking newBooking = bookingMapper.selectById(booking.getId());
+
+        // 6. 如果课程有价格，生成消费记录
+        if (booking.getBookingType() != null && booking.getRelatedId() != null) {
+            FitnessProgram program = fitnessProgramMapper.selectById(booking.getRelatedId());
+            if (program != null && program.getPrice() != null
+                    && program.getPrice().compareTo(java.math.BigDecimal.ZERO) > 0) {
+                com.gym.club.entity.PaymentRecord payment = new com.gym.club.entity.PaymentRecord();
+                payment.setMemberId(booking.getMemberId());
+                payment.setOrderNumber("BKPAY" + System.currentTimeMillis());
+                // 1:Card, 2:Course, 3:Coach
+                // If type is 1 (Group) -> 2 (Course), if 2 (Private) -> 3 (Coach)
+                payment.setPaymentType(program.getType() == 2 ? 3 : 2);
+                payment.setRelatedId(newBooking.getId());
+                payment.setAmount(program.getPrice());
+                payment.setPaymentMethod(1); // Default to method 1
+                payment.setPaymentStatus(1); // Auto-paid for now
+                payment.setRemark("课程预约消费: " + program.getName());
+                paymentService.createPaymentOrder(payment);
+            }
+        }
+
+        return newBooking;
     }
+
+    @Autowired
+    private com.gym.club.mapper.PaymentRecordMapper paymentRecordMapper;
 
     /**
      * 取消预约
@@ -127,7 +155,31 @@ public class BookingService {
             throw new RuntimeException("预约开始前2小时内不能取消");
         }
 
-        return bookingMapper.updateBookingStatus(id, 2, cancelReason) > 0;
+        boolean success = bookingMapper.updateBookingStatus(id, 2, cancelReason) > 0;
+
+        if (success) {
+            // Find related payment record and set to Refunded (3)
+            // Payment type for courses/private coach is 2 or 3. We try both or check logic.
+            // Earlier logic: Program type 2 (Private) -> Payment Type 3, else 2.
+            // Since we don't easily know program type here without fetching, checking both
+            // is safest or we assume.
+            // Let's just try to find by relatedId = bookingId.
+            // In mapper I added paymentType param.
+
+            // Try fetching with type 2 (Course) first
+            com.gym.club.entity.PaymentRecord record = paymentRecordMapper.selectByRelatedId(id, 2);
+            if (record == null) {
+                record = paymentRecordMapper.selectByRelatedId(id, 3); // Try Coach type
+            }
+
+            if (record != null) {
+                record.setPaymentStatus(3); // Refunded
+                record.setRemark(record.getRemark() + " [已退款: " + cancelReason + "]");
+                paymentRecordMapper.update(record);
+            }
+        }
+
+        return success;
     }
 
     /**

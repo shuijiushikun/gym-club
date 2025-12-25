@@ -18,6 +18,13 @@
         SELECT * FROM member ORDER BY id DESC
     </select>
 
+    <select id="selectByCoachId" resultType="com.gym.club.entity.Member">
+        SELECT DISTINCT m.*
+        FROM member m
+        JOIN booking b ON m.id = b.member_id
+        WHERE b.coach_id = #{coachId}
+    </select>
+
     <update id="update">
         UPDATE member
         <set>

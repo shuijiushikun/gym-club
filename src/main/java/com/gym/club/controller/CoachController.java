@@ -36,4 +36,9 @@ public class CoachController {
     public boolean deleteById(@PathVariable Integer id) {
         return coachService.deleteById(id);
     }
+
+    @GetMapping("/{id}/students")
+    public List<com.gym.club.entity.Member> getStudents(@PathVariable Integer id) {
+        return coachService.getStudents(id);
+    }
 }

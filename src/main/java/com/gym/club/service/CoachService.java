@@ -11,6 +11,9 @@ public class CoachService {
     @Autowired
     private CoachMapper coachMapper;
 
+    @Autowired
+    private com.gym.club.mapper.MemberMapper memberMapper;
+
     public Coach addCoach(Coach coach) {
         coachMapper.insert(coach);
         return coach;
@@ -31,5 +34,9 @@ public class CoachService {
 
     public boolean deleteById(Integer id) {
         return coachMapper.deleteById(id) > 0;
+    }
+
+    public List<com.gym.club.entity.Member> getStudents(Integer coachId) {
+        return memberMapper.selectByCoachId(coachId);
     }
 }

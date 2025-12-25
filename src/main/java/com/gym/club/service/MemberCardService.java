@@ -38,6 +38,12 @@ public class MemberCardService {
             throw new RuntimeException("会员不存在");
         }
 
+        // Check if member already has a valid card
+        MemberCard existingCard = memberCardMapper.selectValidCardByMemberId(memberCard.getMemberId());
+        if (existingCard != null) {
+            throw new RuntimeException("Member already has a valid card. Please wait for it to expire or delete it.");
+        }
+
         // 验证卡类型是否存在
         CardType cardType = cardTypeMapper.selectById(memberCard.getCardTypeId());
         if (cardType == null || cardType.getStatus() != 1) {
@@ -61,10 +67,17 @@ public class MemberCardService {
 
         // 默认状态
         if (memberCard.getPaymentStatus() == null) {
-            memberCard.setPaymentStatus(0); // 未支付
+            if (memberCard.getPaidAmount().compareTo(memberCard.getTotalAmount()) >= 0) {
+                memberCard.setPaymentStatus(1); // 已支付
+                memberCard.setCardStatus(1); // 有效
+            } else {
+                memberCard.setPaymentStatus(0); // 未支付
+                memberCard.setCardStatus(0); // 无效 (未支付)
+            }
         }
+        // Fallback if manually set (should be rare/handled above)
         if (memberCard.getCardStatus() == null) {
-            memberCard.setCardStatus(1); // 有效
+            memberCard.setCardStatus(memberCard.getPaymentStatus() == 1 ? 1 : 0);
         }
 
         // 插入数据库
@@ -102,12 +115,56 @@ public class MemberCardService {
         updateCard.setId(id);
         updateCard.setPaidAmount(newPaidAmount);
 
-        // 如果支付金额 >= 总金额，标记为已支付
+        // 如果支付金额 >= 总金额，标记为已支付并激活
         if (newPaidAmount.compareTo(card.getTotalAmount()) >= 0) {
+            // Check for existing valid card BEFORE activating this one
+            MemberCard existingValid = memberCardMapper.selectValidCardByMemberId(card.getMemberId());
+            if (existingValid != null && !existingValid.getId().equals(id)) {
+                throw new RuntimeException("Member already has a valid card. Cannot activate another one.");
+            }
+
             updateCard.setPaymentStatus(1); // 已支付
+            updateCard.setCardStatus(1); // 激活
         }
 
         memberCardMapper.update(updateCard);
         return true;
+    }
+
+    @Transactional
+    public boolean recharge(Integer cardId, Integer days, BigDecimal amount) {
+        MemberCard card = memberCardMapper.selectById(cardId);
+        if (card == null) {
+            throw new RuntimeException("Card not found");
+        }
+
+        MemberCard updateCard = new MemberCard();
+        updateCard.setId(cardId);
+
+        // Extend validity
+        LocalDate newEndDate = card.getEndDate().plusDays(days);
+        updateCard.setEndDate(newEndDate);
+        updateCard.setRemainingDays(card.getRemainingDays() + days);
+
+        // Update financial records
+        updateCard.setTotalAmount(card.getTotalAmount().add(amount));
+        updateCard.setPaidAmount(card.getPaidAmount().add(amount));
+
+        // Ensure status is valid
+        if (card.getCardStatus() != 1) {
+            updateCard.setCardStatus(1);
+        }
+
+        memberCardMapper.update(updateCard);
+        return true;
+    }
+
+    @Transactional
+    public void delete(Integer id) {
+        MemberCard card = memberCardMapper.selectById(id);
+        if (card == null) {
+            throw new RuntimeException("Member card not found");
+        }
+        memberCardMapper.deleteById(id);
     }
 }

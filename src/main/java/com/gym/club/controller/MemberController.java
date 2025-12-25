@@ -17,6 +17,18 @@ public class MemberController {
         return memberService.register(member);
     }
 
+    @PutMapping("/update")
+    public boolean update(@RequestBody Member member) {
+        memberService.update(member);
+        return true;
+    }
+
+    @DeleteMapping("/{id}")
+    public boolean delete(@PathVariable Integer id) {
+        memberService.delete(id);
+        return true;
+    }
+
     @GetMapping("/{id}")
     public Member getById(@PathVariable Integer id) {
         return memberService.getById(id);

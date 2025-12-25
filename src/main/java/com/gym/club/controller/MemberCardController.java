@@ -42,4 +42,9 @@ public class MemberCardController {
     public boolean payCard(@PathVariable Integer id, @RequestParam BigDecimal amount) {
         return memberCardService.payCard(id, amount);
     }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Integer id) {
+        memberCardService.delete(id);
+    }
 }

@@ -16,6 +16,14 @@ public class MemberService {
         return member;
     }
 
+    public void update(Member member) {
+        memberMapper.update(member);
+    }
+
+    public void delete(Integer id) {
+        memberMapper.deleteById(id);
+    }
+
     public Member getById(Integer id) {
         return memberMapper.selectById(id);
     }

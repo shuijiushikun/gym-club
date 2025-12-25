@@ -65,6 +65,25 @@
         ORDER BY pr.create_time DESC
     </select>
 
+    <select id="selectByRelatedId" resultMap="paymentRecordMap">
+        SELECT pr.*, 
+               m.username as m_username, m.real_name as m_real_name, m.phone as m_phone
+        FROM payment_record pr
+        LEFT JOIN member m ON pr.member_id = m.id
+        WHERE pr.related_id = #{relatedId} AND pr.payment_type = #{paymentType}
+        LIMIT 1
+    </select>
+
+    <select id="selectByRelatedIds" resultMap="paymentRecordMap">
+        SELECT pr.*
+        FROM payment_record pr
+        WHERE pr.payment_type IN (2, 3)
+          AND pr.related_id IN
+          <foreach item="item" index="index" collection="relatedIds" open="(" separator="," close=")">
+              #{item}
+          </foreach>
+    </select>
+
     <select id="sumAmountByMemberId" resultType="java.math.BigDecimal">
         SELECT SUM(amount) FROM payment_record 
         WHERE member_id = #{memberId} AND payment_status = 1

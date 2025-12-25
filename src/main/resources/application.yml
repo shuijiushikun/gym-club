@@ -6,9 +6,9 @@ spring:
     name: gym-club
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/gym_club?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
-    username: root  # 改成你的数据库用户名
-    password: 123456  # 改成你的数据库密码
+    url: jdbc:mysql://127.0.0.1:3306/gym_club?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root # 改成你的数据库用户名
+    password: 123456 # 改成你的数据库密码
 
 mybatis:
   mapper-locations: classpath:mapper/*.xml
@@ -25,7 +25,6 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
-
 
 # 模拟支付接口地址（后续可配置）
 payment:

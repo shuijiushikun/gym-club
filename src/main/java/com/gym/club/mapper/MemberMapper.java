@@ -23,4 +23,7 @@ public interface MemberMapper {
 
     // 根据ID删除
     int deleteById(Integer id);
+
+    // 查询教练的学员（通过预约关联）
+    List<Member> selectByCoachId(Integer coachId);
 }
