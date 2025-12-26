@@ -61,7 +61,14 @@
         FROM attendance a
         LEFT JOIN member m ON a.member_id = m.id
         LEFT JOIN booking b ON a.booking_id = b.id
-        WHERE a.check_in_time BETWEEN #{startDate} AND #{endDate}
+        <where>
+            <if test="startDate != null">
+                AND a.check_in_time &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND a.check_in_time &lt;= #{endDate}
+            </if>
+        </where>
         ORDER BY a.check_in_time DESC
     </select>
 
