@@ -17,12 +17,17 @@ public class AuthService {
     private CoachMapper coachMapper;
 
     @Autowired
+    private com.gym.club.utils.JwtUtils jwtUtils;
+
+    @Autowired
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     /**
      * 简单登录验证
      */
     public LoginResponse login(String username, String password, String role) {
+        LoginResponse response = null;
+
         // 会员登录
         if ("member".equalsIgnoreCase(role)) {
             Member member = memberMapper.selectByUsername(username);
@@ -45,11 +50,12 @@ public class AuthService {
             if (member.getStatus() != 1) {
                 throw new RuntimeException("账号已被禁用");
             }
-            return new LoginResponse(
+            response = new LoginResponse(
                     member.getId(),
                     member.getUsername(),
                     "MEMBER",
                     member.getRealName());
+            response.setToken(jwtUtils.generateToken(username, "MEMBER", member.getId()));
         }
 
         // 教练登录
@@ -74,11 +80,12 @@ public class AuthService {
             if (coach.getStatus() != 1) {
                 throw new RuntimeException("账号已被禁用");
             }
-            return new LoginResponse(
+            response = new LoginResponse(
                     coach.getId(),
                     coach.getUsername(),
                     "COACH",
                     coach.getRealName());
+            response.setToken(jwtUtils.generateToken(username, "COACH", coach.getId()));
         }
 
         // 管理员登录（硬编码）
@@ -86,36 +93,16 @@ public class AuthService {
             if (!"admin".equals(username) || !"admin123".equals(password)) {
                 throw new RuntimeException("管理员账号或密码错误");
             }
-            return new LoginResponse(
+            response = new LoginResponse(
                     0,
                     "admin",
                     "ADMIN",
                     "系统管理员");
+            response.setToken(jwtUtils.generateToken("admin", "ADMIN", 0));
+        } else {
+            throw new RuntimeException("未知角色类型");
         }
 
-        throw new RuntimeException("未知角色类型");
-    }
-
-    /**
-     * 验证token（简化版）
-     */
-    public boolean validateToken(String token, String role, Integer userId) {
-        // 简单验证，实际应该更复杂
-        if (token == null || !token.startsWith("simulated-token-")) {
-            return false;
-        }
-
-        // 检查用户是否存在（根据角色）
-        if ("MEMBER".equals(role)) {
-            Member member = memberMapper.selectById(userId);
-            return member != null && member.getStatus() == 1;
-        } else if ("COACH".equals(role)) {
-            Coach coach = coachMapper.selectById(userId);
-            return coach != null && coach.getStatus() == 1;
-        } else if ("ADMIN".equals(role)) {
-            return userId == 0;
-        }
-
-        return false;
+        return response;
     }
 }
