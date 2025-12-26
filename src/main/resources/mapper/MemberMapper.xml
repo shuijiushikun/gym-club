@@ -25,6 +25,54 @@
         WHERE b.coach_id = #{coachId}
     </select>
 
+    <!-- 统计会员年龄分布 -->
+    <select id="countMembersByAgeGroup" resultType="java.util.Map">
+        SELECT 
+            CASE 
+                WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) BETWEEN 18 AND 25 THEN '18-25岁'
+                WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) BETWEEN 26 AND 35 THEN '26-35岁'
+                WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) BETWEEN 36 AND 45 THEN '36-45岁'
+                WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) >= 46 THEN '46岁以上'
+                ELSE '未知'
+            END as age_group,
+            COUNT(*) as count
+        FROM member
+        WHERE birthday IS NOT NULL
+        GROUP BY age_group
+        ORDER BY 
+            CASE age_group
+                WHEN '18-25岁' THEN 1
+                WHEN '26-35岁' THEN 2
+                WHEN '36-45岁' THEN 3
+                WHEN '46岁以上' THEN 4
+                ELSE 5
+            END
+    </select>
+
+    <!-- 统计会员注册趋势 -->
+    <select id="countMembersRegisteredByMonth" resultType="java.util.Map">
+        SELECT 
+            DATE_FORMAT(create_time, '%Y-%m') as month,
+            COUNT(*) as count
+        FROM member
+        WHERE create_time BETWEEN #{startDate} AND #{endDate}
+        GROUP BY DATE_FORMAT(create_time, '%Y-%m')
+        ORDER BY month
+    </select>
+
+    <!-- 统计会员卡类型分布 -->
+    <select id="countMembersByCardType" resultType="java.util.Map">
+        SELECT 
+            ct.name as card_type,
+            COUNT(DISTINCT mc.member_id) as count
+        FROM member_card mc
+        INNER JOIN card_type ct ON mc.card_type_id = ct.id
+        WHERE mc.card_status = 1  -- 有效卡
+        AND mc.payment_status = 1  -- 已支付
+        GROUP BY ct.id, ct.name
+        ORDER BY count DESC
+    </select>
+
     <update id="update">
         UPDATE member
         <set>

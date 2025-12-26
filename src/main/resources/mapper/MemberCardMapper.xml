@@ -95,6 +95,8 @@
         LIMIT 1
     </select>
 
+
+
     <update id="update">
         UPDATE member_card
         <set>

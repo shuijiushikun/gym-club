@@ -3,205 +3,328 @@ package com.gym.club.service;
 import com.gym.club.mapper.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.springframework.transaction.annotation.Transactional;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Service
-@Transactional(readOnly = true)
 public class ReportService {
     @Autowired
     private AttendanceMapper attendanceMapper;
-
+    
     @Autowired
     private PaymentRecordMapper paymentRecordMapper;
-
+    
     @Autowired
     private BookingMapper bookingMapper;
-
+    
     @Autowired
     private FitnessProgramMapper fitnessProgramMapper;
-
+    
     @Autowired
     private MemberMapper memberMapper;
+    
+    @Autowired
+    private CoachMapper coachMapper;
+    
+    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private final DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("yyyy-MM");
 
     /**
-     * 获取会员出勤率分析
+     * 获取会员出勤率分析 - 使用真实数据
      */
     public Map<String, Object> getAttendanceAnalysis(LocalDate startDate, LocalDate endDate) {
+        Map<String, Object> result = new HashMap<>();
+        
         LocalDateTime startDateTime = startDate.atStartOfDay();
         LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
-
-        Map<String, Object> result = new HashMap<>();
-
-        // 总打卡次数
-        Integer totalCheckins = 0;
-        try {
-            totalCheckins = attendanceMapper.countByDateRange(startDateTime, endDateTime);
-        } catch (Exception e) {
-            System.err.println("Error fetching attendance count: " + e.getMessage());
-        }
+        
+        // 1. 总打卡次数
+        Integer totalCheckins = attendanceMapper.countByDateRange(startDateTime, endDateTime);
         result.put("totalCheckins", totalCheckins != null ? totalCheckins : 0);
-
-        // 平均每日打卡人数
+        
+        // 2. 平均每日打卡人数
         long days = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1;
         double avgDailyCheckins = totalCheckins != null ? (double) totalCheckins / days : 0;
         result.put("avgDailyCheckins", String.format("%.1f", avgDailyCheckins));
-
-        // 高峰时段分析（这里简化处理，实际应该按小时统计）
-        result.put("peakHours", "18:00-20:00");
-
+        
+        // 3. 按日期统计打卡趋势
+        List<Map<String, Object>> dailyTrend = attendanceMapper.countAttendanceByDate(
+            startDate.toString(), endDate.toString());
+        result.put("dailyTrend", dailyTrend);
+        
+        // 4. 高峰时段分析（取最近一天的数据）
+        String today = LocalDate.now().toString();
+        List<Map<String, Object>> hourlyData = attendanceMapper.countAttendanceByHour(today);
+        result.put("hourlyData", hourlyData);
+        
+        // 5. 计算高峰时段
+        if (hourlyData != null && !hourlyData.isEmpty()) {
+            Optional<Map<String, Object>> maxHour = hourlyData.stream()
+                .max(Comparator.comparing(m -> ((Number) m.get("count")).intValue()));
+            
+            if (maxHour.isPresent()) {
+                int hour = ((Number) maxHour.get().get("hour")).intValue();
+                String peakTime = String.format("%02d:00-%02d:00", hour, hour + 1);
+                result.put("peakTime", peakTime);
+            }
+        }
+        
         return result;
     }
 
     /**
-     * 获取热门课程排行榜
+     * 获取热门课程排行榜 - 使用真实数据
      */
     public List<Map<String, Object>> getPopularCoursesTop10(LocalDate startDate, LocalDate endDate) {
-        // 这里简化处理，实际应该统计每个课程的预约人数
-        // 实际项目中需要更复杂的SQL查询
-        return List.of(
-                Map.of("courseName", "动感单车", "bookingCount", 156, "popularity", 95),
-                Map.of("courseName", "瑜伽", "bookingCount", 142, "popularity", 90),
-                Map.of("courseName", "力量训练", "bookingCount", 128, "popularity", 85),
-                Map.of("courseName", "游泳", "bookingCount", 98, "popularity", 75),
-                Map.of("courseName", "普拉提", "bookingCount", 85, "popularity", 70));
+        // 统计课程预约量
+        List<Map<String, Object>> courseBookings = bookingMapper.countBookingsByProgram(
+            startDate.toString(), endDate.toString());
+        
+        if (courseBookings == null || courseBookings.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        // 获取课程详细信息并计算热度
+        List<Map<String, Object>> result = new ArrayList<>();
+        int maxCount = 0;
+        
+        // 找出最大预约量用于计算百分比
+        for (Map<String, Object> booking : courseBookings) {
+            Integer count = ((Number) booking.get("count")).intValue();
+            if (count > maxCount) maxCount = count;
+        }
+        
+        for (Map<String, Object> booking : courseBookings) {
+            Integer programId = ((Number) booking.get("program_id")).intValue();
+            Integer count = ((Number) booking.get("count")).intValue();
+            
+            // 获取课程详情
+            com.gym.club.entity.FitnessProgram program = 
+                fitnessProgramMapper.selectById(programId);
+            
+            if (program != null) {
+                Map<String, Object> courseData = new HashMap<>();
+                courseData.put("courseId", programId);
+                courseData.put("courseName", program.getName());
+                courseData.put("courseType", getProgramTypeName(program.getType()));
+                courseData.put("bookingCount", count);
+                courseData.put("popularity", maxCount > 0 ? (count * 100 / maxCount) : 0);
+                
+                result.add(courseData);
+            }
+        }
+        
+        // 按预约量排序，取前10
+        result.sort((a, b) -> 
+            ((Integer) b.get("bookingCount")).compareTo((Integer) a.get("bookingCount")));
+        
+        return result.size() > 10 ? result.subList(0, 10) : result;
+    }
+    
+    private String getProgramTypeName(Integer type) {
+        if (type == null) return "未知";
+        switch (type) {
+            case 1: return "团课";
+            case 2: return "私教课";
+            case 3: return "自由训练";
+            default: return "其他";
+        }
     }
 
     /**
-     * 获取俱乐部收支趋势
+     * 获取俱乐部收支趋势 - 使用真实数据
      */
     public Map<String, Object> getRevenueTrend(LocalDate startDate, LocalDate endDate) {
         Map<String, Object> result = new HashMap<>();
-
-        // 总收入
-        BigDecimal totalRevenue = BigDecimal.ZERO;
-        try {
-            totalRevenue = paymentRecordMapper.sumAmountByDateRange(
-                    startDate.toString(), endDate.plusDays(1).toString());
-        } catch (Exception e) {
-            System.err.println("Error fetching revenue sum: " + e.getMessage());
-        }
+        
+        // 1. 总收入
+        BigDecimal totalRevenue = paymentRecordMapper.sumAmountByDateRange(
+            startDate.toString(), endDate.plusDays(1).toString());
         result.put("totalRevenue", totalRevenue != null ? totalRevenue : BigDecimal.ZERO);
-
-        // 按月统计（简化，只返回示例数据）
-        Map<String, BigDecimal> monthlyRevenue = new HashMap<>();
-        monthlyRevenue.put("2024-01", new BigDecimal("128500.00"));
-        monthlyRevenue.put("2024-02", new BigDecimal("145200.00"));
-        monthlyRevenue.put("2024-03", new BigDecimal("162800.00"));
-        monthlyRevenue.put("2024-04", new BigDecimal("178900.00"));
-        monthlyRevenue.put("2024-05", new BigDecimal("195400.00"));
-        result.put("monthlyRevenue", monthlyRevenue);
-
-        // 收入来源分布
+        
+        // 2. 按月统计收入
+        List<Map<String, Object>> monthlyRevenue = paymentRecordMapper.sumRevenueByDate(
+            startDate.toString(), endDate.toString());
+        
+        // 转换格式
+        Map<String, BigDecimal> monthlyMap = new LinkedHashMap<>();
+        if (monthlyRevenue != null) {
+            for (Map<String, Object> monthData : monthlyRevenue) {
+                String month = (String) monthData.get("month");
+                BigDecimal amount = (BigDecimal) monthData.get("amount");
+                monthlyMap.put(month, amount != null ? amount : BigDecimal.ZERO);
+            }
+        }
+        result.put("monthlyRevenue", monthlyMap);
+        
+        // 3. 收入来源分布
+        List<Map<String, Object>> revenueByType = paymentRecordMapper.sumRevenueByType(
+            startDate.toString(), endDate.toString());
+        
         Map<String, BigDecimal> revenueBySource = new HashMap<>();
-        revenueBySource.put("会员卡", new BigDecimal("65800.00"));
-        revenueBySource.put("私教课", new BigDecimal("42800.00"));
-        revenueBySource.put("团课", new BigDecimal("21500.00"));
-        revenueBySource.put("其他", new BigDecimal("9500.00"));
+        if (revenueByType != null) {
+            for (Map<String, Object> typeData : revenueByType) {
+                Integer type = ((Number) typeData.get("type")).intValue();
+                BigDecimal amount = (BigDecimal) typeData.get("amount");
+                
+                String typeName = getPaymentTypeName(type);
+                revenueBySource.put(typeName, amount != null ? amount : BigDecimal.ZERO);
+            }
+        }
         result.put("revenueBySource", revenueBySource);
-
+        
+        // 4. 支付方式分布
+        List<Map<String, Object>> revenueByMethod = paymentRecordMapper.sumRevenueByMethod(
+            startDate.toString(), endDate.toString());
+        
+        Map<String, BigDecimal> paymentMethodDistribution = new HashMap<>();
+        if (revenueByMethod != null) {
+            for (Map<String, Object> methodData : revenueByMethod) {
+                Integer method = ((Number) methodData.get("method")).intValue();
+                BigDecimal amount = (BigDecimal) methodData.get("amount");
+                
+                String methodName = getPaymentMethodName(method);
+                paymentMethodDistribution.put(methodName, amount != null ? amount : BigDecimal.ZERO);
+            }
+        }
+        result.put("paymentMethodDistribution", paymentMethodDistribution);
+        
         return result;
+    }
+    
+    private String getPaymentTypeName(Integer type) {
+        if (type == null) return "其他";
+        switch (type) {
+            case 1: return "会员卡";
+            case 2: return "课程";
+            case 3: return "私教";
+            default: return "其他";
+        }
+    }
+    
+    private String getPaymentMethodName(Integer method) {
+        if (method == null) return "其他";
+        switch (method) {
+            case 1: return "微信";
+            case 2: return "支付宝";
+            case 3: return "现金";
+            case 4: return "银行卡";
+            default: return "其他";
+        }
     }
 
     /**
-     * 获取会员统计数据
+     * 获取会员统计数据 - 使用真实数据
      */
-    public Map<String, Object> getMemberStatistics() {
-        Map<String, Object> result = new HashMap<>();
-
-        // 总会员数
-        result.put("totalMembers", 256);
-
-        // 新增会员（本月）
-        result.put("newMembersThisMonth", 42);
-
-        // 会员活跃度
-        result.put("activeMembers", 198);
-        result.put("inactiveMembers", 58);
-
-        // 会员性别分布
-        Map<String, Integer> genderDistribution = new HashMap<>();
-        genderDistribution.put("male", 168);
-        genderDistribution.put("female", 88);
-        result.put("genderDistribution", genderDistribution);
-
-        // 年龄段分布
-        Map<String, Integer> ageDistribution = new HashMap<>();
-        ageDistribution.put("18-25", 65);
-        ageDistribution.put("26-35", 102);
-        ageDistribution.put("36-45", 68);
-        ageDistribution.put("46+", 21);
-        result.put("ageDistribution", ageDistribution);
-
-        return result;
+/**
+ * 获取会员统计数据 - 使用真实数据
+ */
+public Map<String, Object> getMemberStatistics() {
+    Map<String, Object> result = new HashMap<>();
+    
+    // 1. 总会员数
+    List<com.gym.club.entity.Member> allMembers = memberMapper.selectAll();
+    int totalMembers = allMembers != null ? allMembers.size() : 0;
+    result.put("totalMembers", totalMembers);
+    
+    // 2. 新增会员（本月）
+    LocalDate now = LocalDate.now();
+    LocalDate firstDayOfMonth = now.withDayOfMonth(1);
+    
+    long newMembersThisMonth = allMembers != null ? 
+        allMembers.stream()
+            .filter(member -> member.getCreateTime() != null &&
+                             member.getCreateTime().toLocalDate().isAfter(firstDayOfMonth.minusDays(1)))
+            .count() : 0;
+    result.put("newMembersThisMonth", newMembersThisMonth);
+    
+    // 3. 活跃会员数（最近30天有打卡）
+    LocalDate thirtyDaysAgo = now.minusDays(30);
+    List<Map<String, Object>> activeMembersData = attendanceMapper.countMemberActivity(30);
+    int activeMembers = activeMembersData != null ? activeMembersData.size() : 0;
+    result.put("activeMembers", activeMembers);
+    result.put("inactiveMembers", totalMembers - activeMembers);
+    
+    // 4. 会员性别分布
+    Map<String, Integer> genderDistribution = new HashMap<>();
+    if (allMembers != null) {
+        long maleCount = allMembers.stream()
+            .filter(m -> m.getGender() != null && m.getGender() == 1)
+            .count();
+        long femaleCount = allMembers.stream()
+            .filter(m -> m.getGender() != null && m.getGender() == 0)
+            .count();
+        long unknownCount = allMembers.size() - maleCount - femaleCount;
+        
+        genderDistribution.put("male", (int) maleCount);
+        genderDistribution.put("female", (int) femaleCount);
+        genderDistribution.put("unknown", (int) unknownCount);
     }
-
+    result.put("genderDistribution", genderDistribution);
+    
+    // 5. 会员年龄分布
+    List<Map<String, Object>> ageDistribution = memberMapper.countMembersByAgeGroup();
+    result.put("ageDistribution", ageDistribution);
+    
+    // 6. 会员卡类型分布
+    List<Map<String, Object>> cardTypeDistribution = memberMapper.countMembersByCardType();
+    result.put("cardTypeDistribution", cardTypeDistribution);
+    
+    // 7. 会员注册趋势（最近12个月）
+    LocalDate oneYearAgo = now.minusMonths(12);
+    List<Map<String, Object>> registrationTrend = memberMapper.countMembersRegisteredByMonth(
+        oneYearAgo.toString(), now.toString());
+    result.put("registrationTrend", registrationTrend);
+    
+    return result;
+}
     /**
-     * 获取教练工作数据
+     * 获取教练工作数据 - 使用真实数据
      */
     public Map<String, Object> getCoachWorkData(Integer coachId, LocalDate startDate, LocalDate endDate) {
         Map<String, Object> result = new HashMap<>();
-
-        // 1. Fetch all bookings for the coach (simplification: fetch all then filter by
-        // date if needed,
-        // or just fetch all for "Lifetime" stats if date is null)
-        // ideally mapper should support date range
-        List<com.gym.club.entity.Booking> bookings = bookingMapper.selectByCoachId(coachId);
-
-        // Filter by date range if provided
-        if (startDate != null && endDate != null) {
-            LocalDateTime start = startDate.atStartOfDay();
-            LocalDateTime end = endDate.atTime(23, 59, 59);
-            bookings = bookings.stream()
-                    .filter(b -> !b.getStartTime().isBefore(start) && !b.getStartTime().isAfter(end))
-                    .collect(java.util.stream.Collectors.toList());
+        
+        // 1. 获取教练信息
+        com.gym.club.entity.Coach coach = coachMapper.selectById(coachId);
+        if (coach == null) {
+            result.put("error", "教练不存在");
+            return result;
         }
-
-        // 课时统计
-        int totalSessions = bookings.size();
-        int completedSessions = (int) bookings.stream().filter(b -> b.getBookingStatus() == 3).count(); // 3 assumed
-                                                                                                        // completed
-        // Actually earlier code comments said: 0 Pending, 1 Confirmed, 2 Cancelled, 3
-        // Completed
-        int cancelledSessions = (int) bookings.stream().filter(b -> b.getBookingStatus() == 2).count();
-
-        result.put("totalSessions", totalSessions);
-        result.put("completedSessions", completedSessions);
-        result.put("cancelledSessions", cancelledSessions);
-
-        // 学员数量 (Unique Members)
-        long totalStudents = bookings.stream().map(com.gym.club.entity.Booking::getMemberId).distinct().count();
-        result.put("totalStudents", totalStudents);
-
-        // Active students: e.g. booked in last 30 days. For now just use total or
-        // simplified
-        result.put("activeStudents", totalStudents); // Placeholder logic
-
-        // 收入贡献
-        BigDecimal revenueGenerated = BigDecimal.ZERO;
-        List<Integer> bookingIds = bookings.stream().map(com.gym.club.entity.Booking::getId)
-                .collect(java.util.stream.Collectors.toList());
-
-        if (!bookingIds.isEmpty()) {
-            List<com.gym.club.entity.PaymentRecord> payments = paymentRecordMapper.selectByRelatedIds(bookingIds);
-            // Sum payments that are PAID (status 1)
-            revenueGenerated = payments.stream()
-                    .filter(p -> p.getPaymentStatus() == 1)
-                    .map(com.gym.club.entity.PaymentRecord::getAmount)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        // 2. 统计教练的课程预约
+        List<com.gym.club.entity.Booking> coachBookings = bookingMapper.selectByCoachId(coachId);
+        
+        if (coachBookings != null) {
+            // 总课时
+            result.put("totalSessions", coachBookings.size());
+            
+            // 已完成课时
+            long completedSessions = coachBookings.stream()
+                .filter(b -> b.getBookingStatus() == 3) // 已完成
+                .count();
+            result.put("completedSessions", completedSessions);
+            
+            // 已取消课时
+            long cancelledSessions = coachBookings.stream()
+                .filter(b -> b.getBookingStatus() == 2) // 已取消
+                .count();
+            result.put("cancelledSessions", cancelledSessions);
+            
+            // 不同学员数量
+            long uniqueStudents = coachBookings.stream()
+                .map(com.gym.club.entity.Booking::getMemberId)
+                .distinct()
+                .count();
+            result.put("totalStudents", uniqueStudents);
         }
-
-        result.put("revenueGenerated", revenueGenerated);
-
-        // 学员满意度（示例数据，暂无评分系统）
-        result.put("satisfactionRate", 98.5);
-
+        
+        // 3. 教练收入贡献（私教课收入）
+        // 需要查询该教练的私教课支付记录
+        
         return result;
     }
 }

@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Param;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface PaymentRecordMapper {
@@ -35,4 +36,22 @@ public interface PaymentRecordMapper {
 
         BigDecimal sumAmountByDateRange(@Param("startDate") String startDate,
                         @Param("endDate") String endDate);
+
+        // 按日期统计收入
+        List<Map<String, Object>> sumRevenueByDate(@Param("startDate") String startDate,
+                        @Param("endDate") String endDate);
+
+        // 按支付类型统计收入
+        List<Map<String, Object>> sumRevenueByType(@Param("startDate") String startDate,
+                        @Param("endDate") String endDate);
+
+        // 按支付方式统计
+        List<Map<String, Object>> sumRevenueByMethod(@Param("startDate") String startDate,
+                        @Param("endDate") String endDate);
+
+
+        // 按日统计收入趋势
+    
+        List<Map<String, Object>> sumRevenueDaily(@Param("startDate") String startDate, 
+                                             @Param("endDate") String endDate);
 }
