@@ -98,6 +98,44 @@
         WHERE check_in_time BETWEEN #{startDate} AND #{endDate}
     </select>
 
+<!-- 按日期统计打卡次数 -->
+<select id="countAttendanceByDate" resultType="java.util.Map">
+    SELECT 
+        DATE(check_in_time) as date,
+        COUNT(*) as count
+    FROM attendance
+    WHERE DATE(check_in_time) BETWEEN #{startDate} AND #{endDate}
+    GROUP BY DATE(check_in_time)
+    ORDER BY date
+</select>
+
+    <!-- 按小时统计打卡高峰 -->
+    <select id="countAttendanceByHour" resultType="java.util.Map">
+        SELECT 
+            HOUR(check_in_time) as hour,
+            COUNT(*) as count
+        FROM attendance
+        WHERE DATE(check_in_time) = #{date}
+        GROUP BY HOUR(check_in_time)
+        ORDER BY hour
+    </select>
+
+    <!-- 统计会员活跃度（最近N天有打卡的会员） -->
+    <select id="countMemberActivity" resultType="java.util.Map">
+        SELECT 
+            m.id as member_id,
+            m.username,
+            m.real_name,
+            COUNT(a.id) as checkin_count,
+            SUM(a.duration_minutes) as total_duration
+        FROM member m
+        LEFT JOIN attendance a ON m.id = a.member_id 
+            AND a.check_in_time >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        GROUP BY m.id
+        HAVING checkin_count > 0
+        ORDER BY checkin_count DESC
+    </select>
+
     <update id="updateCheckOutTime">
         UPDATE attendance 
         SET check_out_time = #{checkOutTime},

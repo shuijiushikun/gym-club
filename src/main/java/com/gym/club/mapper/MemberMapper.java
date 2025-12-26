@@ -2,7 +2,10 @@ package com.gym.club.mapper;
 
 import com.gym.club.entity.Member;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface MemberMapper {
@@ -26,4 +29,11 @@ public interface MemberMapper {
 
     // 查询教练的学员（通过预约关联）
     List<Member> selectByCoachId(Integer coachId);
+
+    List<Map<String, Object>> countMembersByAgeGroup();
+
+    List<Map<String, Object>> countMembersRegisteredByMonth(@Param("startDate") String startDate,
+            @Param("endDate") String endDate);
+
+    List<Map<String, Object>> countMembersByCardType();
 }

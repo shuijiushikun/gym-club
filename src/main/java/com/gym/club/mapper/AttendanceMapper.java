@@ -5,31 +5,57 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface AttendanceMapper {
-    int insert(Attendance attendance);
+        // 新增打卡记录
+        int insert(Attendance attendance);
 
-    Attendance selectById(Integer id);
+        // 根据ID查询打卡记录
+        Attendance selectById(Integer id);
 
-    List<Attendance> selectByMemberId(Integer memberId);
+        // 根据会员ID查询所有打卡记录
+        List<Attendance> selectByMemberId(Integer memberId);
 
-    List<Attendance> selectByDateRange(@Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate);
+        // 根据日期范围查询打卡记录
+        List<Attendance> selectByDateRange(
+                        @Param("startDate") LocalDateTime startDate,
+                        @Param("endDate") LocalDateTime endDate);
 
-    List<Attendance> selectByMemberAndDateRange(@Param("memberId") Integer memberId,
-            @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate);
+        // 根据会员ID+日期范围查询打卡记录
+        List<Attendance> selectByMemberAndDateRange(
+                        @Param("memberId") Integer memberId,
+                        @Param("startDate") LocalDateTime startDate,
+                        @Param("endDate") LocalDateTime endDate);
 
-    int updateCheckOutTime(@Param("id") Integer id,
-            @Param("checkOutTime") LocalDateTime checkOutTime,
-            @Param("durationMinutes") Integer durationMinutes);
+        // 更新签退时间和时长
+        int updateCheckOutTime(
+                        @Param("id") Integer id,
+                        @Param("checkOutTime") LocalDateTime checkOutTime,
+                        @Param("durationMinutes") Integer durationMinutes);
 
-    // 统计
-    Integer countByMemberId(Integer memberId);
+        // 按日期统计打卡次数
+        List<Map<String, Object>> countAttendanceByDate(
+                        @Param("startDate") String startDate,
+                        @Param("endDate") String endDate);
 
-    Integer sumDurationByMemberId(Integer memberId);
+        // 按小时统计打卡高峰
+        List<Map<String, Object>> countAttendanceByHour(@Param("date") String date);
 
-    Integer countByDateRange(@Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate);
+        // 统计会员活跃度
+        List<Map<String, Object>> countMemberActivity(@Param("days") Integer days);
+
+        // 统计会员总打卡次数
+        Integer countByMemberId(Integer memberId);
+
+        // 统计会员总打卡时长（分钟）
+        Integer sumDurationByMemberId(Integer memberId);
+
+        // 统计日期范围内总打卡次数
+        Integer countByDateRange(
+                        @Param("startDate") LocalDateTime startDate,
+                        @Param("endDate") LocalDateTime endDate);
+
+                        
 }

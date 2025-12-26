@@ -95,6 +95,54 @@
           AND create_time BETWEEN #{startDate} AND #{endDate}
     </select>
 
+    <!-- 按日期统计收入 -->
+    <select id="sumRevenueByDate" resultType="java.util.Map">
+        SELECT 
+            DATE_FORMAT(create_time, '%Y-%m') as month,
+            SUM(amount) as amount
+        FROM payment_record
+        WHERE payment_status = 1
+        AND create_time BETWEEN #{startDate} AND #{endDate}
+        GROUP BY DATE_FORMAT(create_time, '%Y-%m')
+        ORDER BY month
+    </select>
+
+    <!-- 按支付类型统计收入 -->
+    <select id="sumRevenueByType" resultType="java.util.Map">
+        SELECT 
+            payment_type as type,
+            SUM(amount) as amount
+        FROM payment_record
+        WHERE payment_status = 1
+        AND create_time BETWEEN #{startDate} AND #{endDate}
+        GROUP BY payment_type
+        ORDER BY amount DESC
+    </select>
+
+    <!-- 按支付方式统计 -->
+    <select id="sumRevenueByMethod" resultType="java.util.Map">
+        SELECT 
+            payment_method as method,
+            SUM(amount) as amount
+        FROM payment_record
+        WHERE payment_status = 1
+        AND create_time BETWEEN #{startDate} AND #{endDate}
+        GROUP BY payment_method
+        ORDER BY amount DESC
+    </select>
+
+    <!-- 统计每日收入趋势 -->
+    <select id="sumRevenueDaily" resultType="java.util.Map">
+        SELECT 
+            DATE(create_time) as date,
+            SUM(amount) as amount
+        FROM payment_record
+        WHERE payment_status = 1
+        AND create_time BETWEEN #{startDate} AND #{endDate}
+        GROUP BY DATE(create_time)
+        ORDER BY date
+    </select>
+
     <update id="update">
         UPDATE payment_record
         <set>
