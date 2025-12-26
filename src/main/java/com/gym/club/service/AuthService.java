@@ -29,7 +29,17 @@ public class AuthService {
             if (member == null) {
                 throw new RuntimeException("会员账号不存在");
             }
-            if (!passwordEncoder.matches(password, member.getPassword())) {
+            boolean passwordMatch = false;
+            if (passwordEncoder.matches(password, member.getPassword())) {
+                passwordMatch = true;
+            } else if (password.equals(member.getPassword())) {
+                // Legacy plain text handling - auto upgrade
+                passwordMatch = true;
+                member.setPassword(passwordEncoder.encode(password));
+                memberMapper.update(member);
+            }
+
+            if (!passwordMatch) {
                 throw new RuntimeException("密码错误");
             }
             if (member.getStatus() != 1) {
@@ -48,7 +58,17 @@ public class AuthService {
             if (coach == null) {
                 throw new RuntimeException("教练账号不存在");
             }
-            if (!passwordEncoder.matches(password, coach.getPassword())) {
+            boolean passwordMatch = false;
+            if (passwordEncoder.matches(password, coach.getPassword())) {
+                passwordMatch = true;
+            } else if (password.equals(coach.getPassword())) {
+                // Legacy plain text handling - auto upgrade
+                passwordMatch = true;
+                coach.setPassword(passwordEncoder.encode(password));
+                coachMapper.update(coach);
+            }
+
+            if (!passwordMatch) {
                 throw new RuntimeException("密码错误");
             }
             if (coach.getStatus() != 1) {

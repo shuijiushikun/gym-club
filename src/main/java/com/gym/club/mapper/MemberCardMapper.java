@@ -27,4 +27,7 @@ public interface MemberCardMapper {
 
     // 查询会员的有效卡
     MemberCard selectValidCardByMemberId(Integer memberId);
+
+    // 统计有效会员数量（持有有效且未过期会员卡）
+    int countActiveMembers(@Param("today") String today);
 }

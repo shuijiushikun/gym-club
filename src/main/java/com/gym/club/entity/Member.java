@@ -16,6 +16,7 @@ public class Member {
     private LocalDate birthday;
     private String avatarUrl;
     private Integer status; // 0禁用，1正常
+    private Integer activeCardCount; // 有效会员卡数量
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

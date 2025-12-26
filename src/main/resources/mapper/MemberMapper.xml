@@ -15,7 +15,14 @@
     </select>
 
     <select id="selectAll" resultType="com.gym.club.entity.Member">
-        SELECT * FROM member ORDER BY id DESC
+        SELECT m.*,
+               (SELECT COUNT(1) FROM member_card mc 
+                WHERE mc.member_id = m.id 
+                AND mc.card_status = 1 
+                AND mc.payment_status = 1 
+                AND mc.end_date >= CURDATE()) AS activeCardCount
+        FROM member m 
+        ORDER BY m.id DESC
     </select>
 
     <select id="selectByCoachId" resultType="com.gym.club.entity.Member">

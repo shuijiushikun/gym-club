@@ -125,4 +125,12 @@
     <delete id="deleteById">
         DELETE FROM member_card WHERE id = #{id}
     </delete>
+
+    <select id="countActiveMembers" resultType="int">
+        SELECT COUNT(DISTINCT member_id)
+        FROM member_card
+        WHERE card_status = 1
+          AND payment_status = 1
+          AND end_date >= #{today}
+    </select>
 </mapper>
