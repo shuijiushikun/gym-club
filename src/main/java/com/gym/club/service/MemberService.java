@@ -11,7 +11,11 @@ public class MemberService {
     @Autowired
     private MemberMapper memberMapper;
 
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
     public Member register(Member member) {
+        member.setPassword(passwordEncoder.encode(member.getPassword()));
         memberMapper.insert(member);
         return member;
     }

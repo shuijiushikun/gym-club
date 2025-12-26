@@ -14,7 +14,11 @@ public class CoachService {
     @Autowired
     private com.gym.club.mapper.MemberMapper memberMapper;
 
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
     public Coach addCoach(Coach coach) {
+        coach.setPassword(passwordEncoder.encode(coach.getPassword()));
         coachMapper.insert(coach);
         return coach;
     }

@@ -16,6 +16,9 @@ public class AuthService {
     @Autowired
     private CoachMapper coachMapper;
 
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
     /**
      * 简单登录验证
      */
@@ -26,7 +29,7 @@ public class AuthService {
             if (member == null) {
                 throw new RuntimeException("会员账号不存在");
             }
-            if (!password.equals(member.getPassword())) {
+            if (!passwordEncoder.matches(password, member.getPassword())) {
                 throw new RuntimeException("密码错误");
             }
             if (member.getStatus() != 1) {
@@ -45,7 +48,7 @@ public class AuthService {
             if (coach == null) {
                 throw new RuntimeException("教练账号不存在");
             }
-            if (!password.equals(coach.getPassword())) {
+            if (!passwordEncoder.matches(password, coach.getPassword())) {
                 throw new RuntimeException("密码错误");
             }
             if (coach.getStatus() != 1) {
