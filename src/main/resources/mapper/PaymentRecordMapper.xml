@@ -143,6 +143,14 @@
         ORDER BY date
     </select>
 
+    <select id="sumRevenueByCoachId" resultType="java.math.BigDecimal">
+        SELECT SUM(amount)
+        FROM payment_record
+        WHERE payment_status = 1
+          AND payment_type IN (2, 3)
+          AND related_id = #{coachId}
+    </select>
+
     <update id="update">
         UPDATE payment_record
         <set>

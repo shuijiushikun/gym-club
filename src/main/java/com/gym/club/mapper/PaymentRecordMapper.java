@@ -49,9 +49,10 @@ public interface PaymentRecordMapper {
         List<Map<String, Object>> sumRevenueByMethod(@Param("startDate") String startDate,
                         @Param("endDate") String endDate);
 
-
         // 按日统计收入趋势
-    
-        List<Map<String, Object>> sumRevenueDaily(@Param("startDate") String startDate, 
-                                             @Param("endDate") String endDate);
+
+        List<Map<String, Object>> sumRevenueDaily(@Param("startDate") String startDate,
+                        @Param("endDate") String endDate);
+
+        BigDecimal sumRevenueByCoachId(Integer coachId);
 }

@@ -5,6 +5,7 @@ import com.gym.club.dto.LoginResponse;
 import com.gym.club.entity.Member;
 import com.gym.club.entity.Coach;
 import com.gym.club.mapper.MemberMapper;
+import com.gym.club.service.AuthService;
 import com.gym.club.mapper.CoachMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+    @Autowired
+    private AuthService authService;
+
     @Autowired
     private MemberMapper memberMapper;
 
@@ -29,66 +33,8 @@ public class AuthController {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            String username = loginRequest.getUsername();
-            String password = loginRequest.getPassword();
-            String role = loginRequest.getRole();
-
-            LoginResponse response = null;
-
-            // 1. 会员登录
-            if ("member".equalsIgnoreCase(role)) {
-                Member member = memberMapper.selectByUsername(username);
-                if (member == null) {
-                    throw new RuntimeException("会员账号不存在");
-                }
-                if (!password.equals(member.getPassword())) {
-                    throw new RuntimeException("密码错误");
-                }
-                if (member.getStatus() != 1) {
-                    throw new RuntimeException("账号已被禁用");
-                }
-                response = new LoginResponse(
-                        member.getId(),
-                        member.getUsername(),
-                        "MEMBER",
-                        member.getRealName());
-            }
-
-            // 2. 教练登录
-            else if ("coach".equalsIgnoreCase(role)) {
-                Coach coach = coachMapper.selectByUsername(username);
-                if (coach == null) {
-                    throw new RuntimeException("教练账号不存在");
-                }
-                if (!password.equals(coach.getPassword())) {
-                    throw new RuntimeException("密码错误");
-                }
-                if (coach.getStatus() != 1) {
-                    throw new RuntimeException("账号已被禁用");
-                }
-                response = new LoginResponse(
-                        coach.getId(),
-                        coach.getUsername(),
-                        "COACH",
-                        coach.getRealName());
-            }
-
-            // 3. 管理员登录（硬编码）
-            else if ("admin".equalsIgnoreCase(role)) {
-                if (!"admin".equals(username) || !"admin123".equals(password)) {
-                    throw new RuntimeException("管理员账号或密码错误");
-                }
-                response = new LoginResponse(
-                        0,
-                        "admin",
-                        "ADMIN",
-                        "系统管理员");
-            }
-
-            // 4. 角色错误
-            else {
-                throw new RuntimeException("未知角色类型，请选择：member、coach、admin");
-            }
+            LoginResponse response = authService.login(loginRequest.getUsername(), loginRequest.getPassword(),
+                    loginRequest.getRole());
 
             result.put("code", 200);
             result.put("message", "登录成功");

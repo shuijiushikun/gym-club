@@ -120,7 +120,8 @@ public class BookingService {
                 // 1:Card, 2:Course, 3:Coach
                 // If type is 1 (Group) -> 2 (Course), if 2 (Private) -> 3 (Coach)
                 payment.setPaymentType(program.getType() == 2 ? 3 : 2);
-                payment.setRelatedId(newBooking.getId());
+                // User Request: Set relatedId to CoachId for easier stats
+                payment.setRelatedId(booking.getCoachId());
                 payment.setAmount(program.getPrice());
                 payment.setPaymentMethod(1); // Default to method 1
                 payment.setPaymentStatus(1); // Auto-paid for now

@@ -3,6 +3,7 @@ package com.gym.club.service;
 import com.gym.club.entity.CardType;
 import com.gym.club.entity.Member;
 import com.gym.club.entity.MemberCard;
+import com.gym.club.entity.PaymentRecord;
 import com.gym.club.mapper.CardTypeMapper;
 import com.gym.club.mapper.MemberCardMapper;
 import com.gym.club.mapper.MemberMapper;
@@ -24,6 +25,10 @@ public class MemberCardService {
 
     @Autowired
     private CardTypeMapper cardTypeMapper;
+
+    @Autowired
+    @org.springframework.context.annotation.Lazy
+    private PaymentService paymentService;
 
     // 生成唯一卡号
     private String generateCardNumber() {
@@ -81,7 +86,29 @@ public class MemberCardService {
         }
 
         // 插入数据库
+        // 插入数据库
         memberCardMapper.insert(memberCard);
+
+        // 如果有支付金额，创建支付记录
+        if (memberCard.getPaidAmount() != null && memberCard.getPaidAmount().compareTo(BigDecimal.ZERO) > 0) {
+            PaymentRecord paymentRecord = new PaymentRecord();
+            paymentRecord.setMemberId(memberCard.getMemberId());
+            paymentRecord.setPaymentType(1); // 会员卡支付
+            paymentRecord.setRelatedId(memberCard.getId());
+            paymentRecord.setAmount(memberCard.getPaidAmount());
+            paymentRecord.setPaymentMethod(1); // 默认为微信支付/其他，因为前端没传
+            paymentRecord.setRemark("购买会员卡：" + memberCard.getCardNumber());
+
+            // 如果卡已激活（已支付完成），则设置支付状态为已支付
+            if (memberCard.getPaymentStatus() == 1) {
+                paymentRecord.setPaymentStatus(1);
+                paymentRecord.setPayTime(java.time.LocalDateTime.now());
+                paymentRecord.setTransactionId("SYS" + System.currentTimeMillis());
+            }
+
+            paymentService.createPaymentOrder(paymentRecord);
+        }
+
         return memberCardMapper.selectById(memberCard.getId());
     }
 
@@ -156,6 +183,23 @@ public class MemberCardService {
         }
 
         memberCardMapper.update(updateCard);
+
+        // 创建支付记录
+        if (amount.compareTo(BigDecimal.ZERO) > 0) {
+            PaymentRecord paymentRecord = new PaymentRecord();
+            paymentRecord.setMemberId(memberCardMapper.selectById(cardId).getMemberId());
+            paymentRecord.setPaymentType(1); // 会员卡支付
+            paymentRecord.setRelatedId(cardId);
+            paymentRecord.setAmount(amount);
+            paymentRecord.setPaymentMethod(1); // 默认
+            paymentRecord.setRemark("会员卡充值/续费");
+            paymentRecord.setPaymentStatus(1); // 直接视为已支付
+            paymentRecord.setPayTime(java.time.LocalDateTime.now());
+            paymentRecord.setTransactionId("SYS" + System.currentTimeMillis());
+
+            paymentService.createPaymentOrder(paymentRecord);
+        }
+
         return true;
     }
 

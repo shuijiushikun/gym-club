@@ -188,7 +188,7 @@
             COUNT(*) as count
         FROM booking
         WHERE booking_type IN (1, 2)  -- 团课和私教课
-        AND start_time BETWEEN #{startDate} AND #{endDate}
+        AND create_time BETWEEN #{startDate} AND #{endDate}
         AND booking_status IN (0, 1, 3)  -- 待确认、已确认、已完成
         GROUP BY related_id
         ORDER BY count DESC

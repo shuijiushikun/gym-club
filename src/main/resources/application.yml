@@ -29,3 +29,10 @@ springdoc:
 # 模拟支付接口地址（后续可配置）
 payment:
   simulate-url: http://localhost:8080/api/payment/simulate
+
+gym:
+  admin:
+    username: admin
+    password: admin123
+  jwt:
+    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
