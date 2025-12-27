@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:lts
+    container_name: gym-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: gym_club
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./gym.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./config/my.cnf:/etc/mysql/conf.d/my.cnf
+      - gym_mysql_data:/var/lib/mysql
+    networks:
+      - gym-network
+
+  backend:
+    build: .
+    container_name: gym-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/gym_club?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+    depends_on:
+      - db
+    networks:
+      - gym-network
+  
+  frontend:
+    image: gym-frontend
+    container_name: gym-frontend
+    restart: always
+    ports:
+      - "3000:80"
+    networks:
+      - gym-network
+
+networks:
+  gym-network:
+    driver: bridge
+
+volumes:
+  gym_mysql_data:
