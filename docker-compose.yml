@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: mysql:lts
@@ -19,7 +17,7 @@ services:
       - gym-network
 
   backend:
-    build: .
+    image: gym-backend
     container_name: gym-backend
     restart: always
     ports:
@@ -32,7 +30,7 @@ services:
       - db
     networks:
       - gym-network
-  
+
   frontend:
     image: gym-frontend
     container_name: gym-frontend
