@@ -14,24 +14,18 @@ import java.util.*;
 public class ReportService {
     @Autowired
     private AttendanceMapper attendanceMapper;
-    
+
     @Autowired
     private PaymentRecordMapper paymentRecordMapper;
-    
+
     @Autowired
     private BookingMapper bookingMapper;
-    
+
     @Autowired
     private FitnessProgramMapper fitnessProgramMapper;
-    
+
     @Autowired
     private MemberMapper memberMapper;
-    
-    @Autowired
-    private CoachMapper coachMapper;
-    
-    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private final DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("yyyy-MM");
 
     @Autowired
     private CoachMapper coachMapper;
@@ -208,27 +202,6 @@ public class ReportService {
 
         return result;
     }
-    
-    private String getPaymentTypeName(Integer type) {
-        if (type == null) return "其他";
-        switch (type) {
-            case 1: return "会员卡";
-            case 2: return "课程";
-            case 3: return "私教";
-            default: return "其他";
-        }
-    }
-    
-    private String getPaymentMethodName(Integer method) {
-        if (method == null) return "其他";
-        switch (method) {
-            case 1: return "微信";
-            case 2: return "支付宝";
-            case 3: return "现金";
-            case 4: return "银行卡";
-            default: return "其他";
-        }
-    }
 
     private String getPaymentTypeName(Integer type) {
         if (type == null)
@@ -324,24 +297,7 @@ public class ReportService {
 
         return result;
     }
-    result.put("genderDistribution", genderDistribution);
-    
-    // 5. 会员年龄分布
-    List<Map<String, Object>> ageDistribution = memberMapper.countMembersByAgeGroup();
-    result.put("ageDistribution", ageDistribution);
-    
-    // 6. 会员卡类型分布
-    List<Map<String, Object>> cardTypeDistribution = memberMapper.countMembersByCardType();
-    result.put("cardTypeDistribution", cardTypeDistribution);
-    
-    // 7. 会员注册趋势（最近12个月）
-    LocalDate oneYearAgo = now.minusMonths(12);
-    List<Map<String, Object>> registrationTrend = memberMapper.countMembersRegisteredByMonth(
-        oneYearAgo.toString(), now.toString());
-    result.put("registrationTrend", registrationTrend);
-    
-    return result;
-}
+
     /**
      * 获取教练工作数据 - 使用真实数据
      */

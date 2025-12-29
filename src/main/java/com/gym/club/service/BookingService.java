@@ -64,6 +64,10 @@ public class BookingService {
             if (booking.getDurationMinutes() == null) {
                 booking.setDurationMinutes(program.getDurationMinutes());
             }
+            // 设置结束时间
+            if (booking.getEndTime() == null) {
+                booking.setEndTime(booking.getStartTime().plusMinutes(program.getDurationMinutes()));
+            }
         }
 
         // 3. 冲突检测
